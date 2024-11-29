@@ -1407,7 +1407,7 @@ class Parser {
     }
     exportObject(reference, outputPath) {
         return __awaiter(this, void 0, void 0, function* () {
-            const args = [
+            let args = [
                 'xcresulttool',
                 'export',
                 '--type',
@@ -1419,6 +1419,9 @@ class Parser {
                 '--id',
                 reference
             ];
+            if (yield this.requiresLegacyFlag()) {
+                args.splice(2, 0, "--legacy");
+            }
             const options = {
                 silent: true
             };
@@ -1442,9 +1445,25 @@ class Parser {
             return output;
         });
     }
+    requiresLegacyFlag() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let output = '';
+            const options = {
+                silent: true,
+                listeners: {
+                    stdout: (data) => {
+                        output += data.toString();
+                    }
+                }
+            };
+            yield exec.exec('xcrun', ['xcresulttool', 'version'], options);
+            const version = parseFloat(output.split(/[ ,]+/)[2]);
+            return version > 23000;
+        });
+    }
     toJSON(reference) {
         return __awaiter(this, void 0, void 0, function* () {
-            const args = [
+            let args = [
                 'xcresulttool',
                 'get',
                 '--path',
@@ -1452,6 +1471,9 @@ class Parser {
                 '--format',
                 'json'
             ];
+            if (yield this.requiresLegacyFlag()) {
+                args.splice(2, 0, "--legacy");
+            }
             if (reference) {
                 args.push('--id');
                 args.push(reference);
